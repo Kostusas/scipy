@@ -515,11 +515,6 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp, save=False):
     # output_dim_n)
     est = xp.sum(weights_reshaped * f_nodes, axis=0, dtype=result_dtype)
 
-    # if save:
-    #     global _saved_nodes, _saved_weights, _saved_f_nodes
-    #     _saved_nodes.append(nodes)
-    #     _saved_weights.append(weights_reshaped)
-    #     _saved_f_nodes.append(f_nodes)
     if save:
         return est, nodes, weights, f_nodes
     else:
