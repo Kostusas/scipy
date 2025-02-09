@@ -33,6 +33,9 @@ class CubatureRegion:
     a: Array
     b: Array
     _xp: ModuleType = field(repr=False)
+    nodes : Array
+    weights: Array
+    f_nodes: Array
 
     def __lt__(self, other):
         # Consider regions with higher error estimates as being "less than" regions with
@@ -399,9 +402,9 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
     err = 0.0
 
     for a_k, b_k in initial_regions:
-        est_k = rule.estimate(f, a_k, b_k, args)
+        est_k, nodes_k, weights_k, f_nodes_k = rule.estimate(f, a_k, b_k, args, save=True)
         err_k = rule.estimate_error(f, a_k, b_k, args)
-        regions.append(CubatureRegion(est_k, err_k, a_k, b_k, xp))
+        regions.append(CubatureRegion(est_k, err_k, a_k, b_k, xp, nodes_k, weights_k, f_nodes_k))
 
         est += est_k
         err += err_k
@@ -442,12 +445,12 @@ def cubature(f, a, b, *, rule="gk21", rtol=1e-8, atol=0, max_subdivisions=10000,
             )
 
             for subdivision_result in mapwrapper(_process_subregion, executor_args):
-                a_k_sub, b_k_sub, est_sub, err_sub = subdivision_result
+                a_k_sub, b_k_sub, est_sub, err_sub, nodes_sub, weights_sub, f_nodes_sub = subdivision_result
 
                 est += est_sub
                 err += err_sub
 
-                new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub, xp)
+                new_region = CubatureRegion(est_sub, err_sub, a_k_sub, b_k_sub, xp, nodes_sub, weights_sub, f_nodes_sub)
 
                 heapq.heappush(regions, new_region)
 
@@ -477,10 +480,10 @@ def _process_subregion(data):
     f, rule, args, coord = data
     a_k_sub, b_k_sub = coord
 
-    est_sub = rule.estimate(f, a_k_sub, b_k_sub, args)
+    est_sub, nodes_sub, weights_sub, f_nodes_sub = rule.estimate(f, a_k_sub, b_k_sub, args, save=True)
     err_sub = rule.estimate_error(f, a_k_sub, b_k_sub, args)
 
-    return a_k_sub, b_k_sub, est_sub, err_sub
+    return a_k_sub, b_k_sub, est_sub, err_sub, nodes_sub, weights_sub, f_nodes_sub
 
 
 def _is_strictly_in_region(a, b, point, xp):

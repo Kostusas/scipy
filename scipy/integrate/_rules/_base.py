@@ -198,7 +198,7 @@ class FixedRule(Rule):
     def nodes_and_weights(self):
         raise NotImplementedError
 
-    def estimate(self, f, a, b, args=()):
+    def estimate(self, f, a, b, args=(), save=False):
         r"""
         Calculate estimate of integral of `f` in rectangular region described by
         corners `a` and `b` as ``sum(weights * f(nodes))``.
@@ -239,7 +239,7 @@ class FixedRule(Rule):
         if self.xp is None:
             self.xp = array_namespace(nodes)
 
-        return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp)
+        return _apply_fixed_rule(f, a, b, nodes, weights, args, self.xp, save=save)
 
 
 class NestedFixedRule(FixedRule):
@@ -473,7 +473,7 @@ def _split_subregion(a, b, xp, split_at=None):
         yield a_sub[i, ...], b_sub[i, ...]
 
 
-def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
+def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp, save=False):
     # Downcast nodes and weights to common dtype of a and b
     result_dtype = a.dtype
     orig_nodes = xp.astype(orig_nodes, result_dtype)
@@ -515,4 +515,7 @@ def _apply_fixed_rule(f, a, b, orig_nodes, orig_weights, args, xp):
     # output_dim_n)
     est = xp.sum(weights_reshaped * f_nodes, axis=0, dtype=result_dtype)
 
-    return est
+    if save:
+        return est, nodes, weights, f_nodes
+    else:
+        return est
